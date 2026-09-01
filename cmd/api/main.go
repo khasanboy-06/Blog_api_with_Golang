@@ -20,6 +20,7 @@ func main() {
 	}
 
 	database.Connect()
+	database.ConnectRedis()
 
 	postRepo := repository.NewPostRepository(database.DB)
 	userRepo := repository.NewUserRepository(database.DB)
