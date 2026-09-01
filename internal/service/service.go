@@ -8,11 +8,11 @@ import (
 )
 
 type PostService interface {
-	CreatePost(req dto.CreatePostRequest) (*models.Post, error)
+	CreatePost(userID uint, req dto.CreatePostRequest) (*models.Post, error)
 	GetPosts(page, limit int) ([]models.Post, int64, int64, error)
 	GetPost(id string) (*models.Post, error)
-	UpdatePost(id string, req dto.UpdatePostRequest) (*models.Post, error)
-	DeletePost(id string) error
+	UpdatePost(id string, userID uint, req dto.UpdatePostRequest) (*models.Post, error)
+	DeletePost(id string, userID uint) error
 }
 
 type postService struct {
@@ -23,11 +23,11 @@ func NewPostService(repo repository.PostRepository) PostService {
 	return &postService{repo: repo}
 }
 
-func (s *postService) CreatePost(req dto.CreatePostRequest) (*models.Post, error) {
+func (s *postService) CreatePost(userID uint, req dto.CreatePostRequest) (*models.Post, error) {
 	post := models.Post{
 		Title:   req.Title,
 		Content: req.Content,
-		Author:  req.Author,
+		UserID:  userID,
 	}
 
 	err := s.repo.Create(&post)
@@ -61,10 +61,14 @@ func (s *postService) GetPost(id string) (*models.Post, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *postService) UpdatePost(id string, req dto.UpdatePostRequest) (*models.Post, error) {
+func (s *postService) UpdatePost(id string, userID uint, req dto.UpdatePostRequest) (*models.Post, error) {
 	post, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, errors.New("Post topilmadi")
+	}
+
+	if post.UserID != userID {
+		return nil, errors.New("bu postni o'zgartirishga huquqingiz yo'q")
 	}
 
 	if req.Title != "" {
@@ -72,9 +76,6 @@ func (s *postService) UpdatePost(id string, req dto.UpdatePostRequest) (*models.
 	}
 	if req.Content != "" {
 		post.Content = req.Content
-	}
-	if req.Author != "" {
-		post.Author = req.Author
 	}
 
 	err = s.repo.Update(post)
@@ -85,10 +86,14 @@ func (s *postService) UpdatePost(id string, req dto.UpdatePostRequest) (*models.
 	return post, nil
 }
 
-func (s *postService) DeletePost(id string) error {
+func (s *postService) DeletePost(id string, userID uint) error {
 	post, err := s.repo.GetByID(id)
 	if err != nil {
 		return errors.New("Post topilmadi")
+	}
+
+	if post.UserID != userID {
+		return errors.New("bu postni o'chirishga huquqingiz yo'q")
 	}
 
 	return s.repo.Delete(post)

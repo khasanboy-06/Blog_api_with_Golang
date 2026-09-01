@@ -33,6 +33,7 @@ func (r *postRepository) GetAll(page, limit int) ([]models.Post, int64, error) {
 
 	offset := (page - 1) * limit
 	err := r.db.
+		Preload("User").
 		Limit(limit).
 		Offset(offset).
 		Order("created_at desc").
@@ -43,7 +44,7 @@ func (r *postRepository) GetAll(page, limit int) ([]models.Post, int64, error) {
 
 func (r *postRepository) GetByID(id string) (*models.Post, error) {
 	var post models.Post
-	err := r.db.First(&post, id).Error
+	err := r.db.Preload("User").First(&post, id).Error
 	if err != nil {
 		return nil, err
 	}

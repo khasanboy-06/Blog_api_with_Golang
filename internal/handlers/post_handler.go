@@ -18,6 +18,14 @@ func NewPostHandler(service service.PostService) *PostHandler {
 }
 
 func (h *PostHandler) CreatePost(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Foydalanuvchi aniqlanmadi"})
+		return
+	}
+	userID := userIDVal.(uint)
+
 	var req dto.CreatePostRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -28,7 +36,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	post, err := h.service.CreatePost(req)
+	post, err := h.service.CreatePost(userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -72,6 +80,8 @@ func (h *PostHandler) GetPost(c *gin.Context) {
 
 func (h *PostHandler) UpdatePost(c *gin.Context) {
 	id := c.Param("id")
+	userIDVal, _ := c.Get("user_id")
+	userID := userIDVal.(uint)
 
 	var req dto.UpdatePostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -82,7 +92,7 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	post, err := h.service.UpdatePost(id, req)
+	post, err := h.service.UpdatePost(id, userID, req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -93,8 +103,10 @@ func (h *PostHandler) UpdatePost(c *gin.Context) {
 
 func (h *PostHandler) DeletePost(c *gin.Context) {
 	id := c.Param("id")
+	userIDVal, _ := c.Get("user_id")
+	userID := userIDVal.(uint)
 
-	err := h.service.DeletePost(id)
+	err := h.service.DeletePost(id, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
